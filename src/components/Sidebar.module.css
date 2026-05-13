@@ -1,0 +1,176 @@
+.sidebar {
+  width: var(--sidebar-w);
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  backdrop-filter: blur(var(--blur));
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.brandOrb {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), #45a29e);
+  box-shadow: 0 0 20px var(--primary-glow);
+  flex-shrink: 0;
+  animation: pulse 3s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 12px var(--primary-glow); }
+  50% { box-shadow: 0 0 28px var(--primary-glow), 0 0 50px rgba(102,252,241,0.2); }
+}
+
+.brandName {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+.nav {
+  flex: 1;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  transition: all var(--transition);
+  position: relative;
+  cursor: pointer;
+}
+
+.navItem:hover {
+  background: var(--primary-dim);
+  color: var(--text);
+}
+
+.navIcon {
+  font-size: 1rem;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.navLabel {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.active {
+  background: var(--primary-dim);
+  color: var(--primary);
+}
+
+.activeIndicator {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: var(--primary);
+  border-radius: 2px 0 0 2px;
+  box-shadow: 0 0 8px var(--primary-glow);
+}
+
+.footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.toggleBtn {
+  width: 100%;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all var(--transition);
+}
+
+.btnStart {
+  background: var(--primary-dim);
+  color: var(--primary);
+  border-color: rgba(102, 252, 241, 0.2);
+}
+
+.btnStart:hover {
+  background: rgba(102, 252, 241, 0.25);
+}
+
+.btnStop {
+  background: var(--danger-dim);
+  color: var(--danger);
+  border-color: rgba(255, 75, 110, 0.2);
+}
+
+.btnStop:hover {
+  background: rgba(255, 75, 110, 0.25);
+}
+
+.statusRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.statusRunning { color: var(--success); }
+.statusStopped { color: var(--text-muted); }
+
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.statusRunning .statusDot {
+  box-shadow: 0 0 6px var(--success);
+  animation: blink 2s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.version {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
