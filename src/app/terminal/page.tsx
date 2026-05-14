@@ -20,6 +20,8 @@ export default function TerminalPage() {
   const [selectedExchange, setSelectedExchange] = useState<string>('ALL');
   const [isTradingEnabled, setIsTradingEnabled] = useState(false);
   const [solPrice, setSolPrice] = useState<number>(0);
+  const [isPaperTrading, setIsPaperTrading] = useState(true);
+  const [stats, setStats] = useState({ virtualBalance: 1000, totalTrades: 0, winRate: 0, totalPnL: 0 });
 
   const connectPhantom = async () => {
     try {
@@ -39,20 +41,26 @@ export default function TerminalPage() {
     let active = true;
     const poll = async () => {
       try {
-        const [fr, pr, sr] = await Promise.all([
+        const [fr, pr, sr, str] = await Promise.all([
           fetch(`${API}/scanner/feed`),
           fetch(`${API}/trades/open`),
-          fetch(`${API}/monitor/sol-price`)
+          fetch(`${API}/monitor/sol-price`),
+          fetch(`${API}/monitor/stats/summary`)
         ]);
         if (!fr.ok) throw new Error();
         const f = await fr.json();
         const p = pr.ok ? await pr.json() : [];
         const s = sr.ok ? await sr.json() : { price: 0 };
+        const st = str.ok ? await str.json() : null;
 
         if (active) {
           setFeed(f || []);
           setPositions(p || []);
           setSolPrice(s.price);
+          if (st) {
+            setStats(st);
+            setIsPaperTrading(st.isPaperTrading);
+          }
           setConnected(true);
           if (!activeToken && f?.length > 0) setActiveToken(f[0]);
         }
@@ -83,17 +91,45 @@ export default function TerminalPage() {
     }
   };
 
+  const togglePaperTrading = async () => {
+    try {
+      const res = await fetch(`${API}/config`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_paper_trading: !isPaperTrading })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIsPaperTrading(data.is_paper_trading);
+      }
+    } catch (err) {
+      console.error('Failed to toggle paper trading:', err);
+    }
+  };
+
+  const resetSimulation = async () => {
+    if (!confirm('Bạn có chắc muốn xóa hết dữ liệu đánh thử và reset số dư về $1000?')) return;
+    try {
+      await fetch(`${API}/monitor/stats/reset`, { method: 'DELETE' });
+    } catch (err) {
+      console.error('Failed to reset simulation:', err);
+    }
+  };
+
   const filteredFeed = selectedExchange === 'ALL'
     ? feed
     : feed.filter(t => t.symbol?.startsWith(selectedExchange.slice(0, 4).toUpperCase()));
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${isPaperTrading ? '' : styles.pageLive}`}>
       {/* Header */}
-      <header className={styles.header}>
+      <header className={`${styles.header} ${isPaperTrading ? '' : styles.headerLive}`}>
         <div className={styles.brand}>
           <div style={{ width: 12, height: 12, borderRadius: '50%', background: connected ? '#00ff66' : '#ff3366', boxShadow: connected ? '0 0 10px #00ff66' : '0 0 10px #ff3366' }} />
           <h1 className={styles.brandTitle}>PUMP-SNIPER TERMINAL</h1>
+          <div className={`${styles.modeBadge} ${isPaperTrading ? styles.modeBadgeTest : styles.modeBadgeLive}`}>
+            {isPaperTrading ? 'DANG TEST (GIA LAP)' : 'DANG CHAY THAT (LIVE)'}
+          </div>
         </div>
         <div className={styles.statsRow}>
           <div className={styles.stat}>
@@ -122,11 +158,43 @@ export default function TerminalPage() {
               onClick={toggleTrading}
               className={`${styles.tradingBtn} ${isTradingEnabled ? styles.tradingBtnActive : ''}`}
             >
-              {isTradingEnabled ? '⏹ DỪNG GIAO DỊCH' : '▶ BẬT GIAO DỊCH'}
+              {isTradingEnabled ? '⏹ DỪNG BOT' : '▶ BẬT BOT'}
+            </button>
+          </div>
+          <div className={styles.stat}>
+            <button
+              onClick={togglePaperTrading}
+              className={`${styles.testModeBtn} ${isPaperTrading ? styles.testModeBtnActive : ''}`}
+            >
+              {isPaperTrading ? '🧪 TEST MODE: ON' : '💵 LIVE MODE: ON'}
             </button>
           </div>
         </div>
       </header>
+
+      {/* Stats Summary Bar */}
+      <div className={styles.statsSummaryBar}>
+        <div className={styles.statsSummaryItem}>
+          <span className={styles.statsSummaryLabel}>Số dư ảo:</span>
+          <span className={styles.statsSummaryValue}>${stats.virtualBalance.toFixed(2)}</span>
+        </div>
+        <div className={styles.statsSummaryItem}>
+          <span className={styles.statsSummaryLabel}>Tổng PnL:</span>
+          <span className={`${styles.statsSummaryValue} ${stats.totalPnL >= 0 ? styles.plus : styles.minus}`}>
+            {stats.totalPnL >= 0 ? '+' : ''}${stats.totalPnL.toFixed(2)}
+          </span>
+        </div>
+        <div className={styles.statsSummaryItem}>
+          <span className={styles.statsSummaryLabel}>Win Rate:</span>
+          <span className={styles.statsSummaryValue}>{stats.winRate}%</span>
+        </div>
+        <div className={styles.statsSummaryItem}>
+          <span className={styles.statsSummaryLabel}>Tổng lệnh:</span>
+          <span className={styles.statsSummaryValue}>{stats.totalTrades}</span>
+        </div>
+        <div style={{ flex: 1 }} />
+        <button className={styles.resetBtn} onClick={resetSimulation}>RESET TEST</button>
+      </div>
 
       {/* Left Feed Panel */}
       <div className={`${styles.panel} ${styles.feed}`}>

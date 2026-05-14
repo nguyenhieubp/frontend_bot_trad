@@ -35,6 +35,43 @@
   gap: 12px;
 }
 
+.modeBadge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-left: 10px;
+}
+
+.modeBadgeTest {
+  background: rgba(0, 136, 255, 0.15);
+  color: #0088ff;
+  border: 1px solid rgba(0, 136, 255, 0.3);
+}
+
+.modeBadgeLive {
+  background: rgba(255, 51, 102, 0.15);
+  color: #ff3366;
+  border: 1px solid rgba(255, 51, 102, 0.3);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.8; }
+  50% { opacity: 1; box-shadow: 0 0 10px rgba(255, 51, 102, 0.3); }
+  100% { opacity: 0.8; }
+}
+
+.headerLive {
+  border-bottom-color: #ff336644 !important;
+}
+
+.pageLive {
+  background: radial-gradient(circle at top right, #1a050a 0%, #08080c 40%);
+}
+
 .brandTitle {
   font-size: 1.2rem;
   font-weight: 700;
@@ -153,6 +190,72 @@
   background: #ff3366;
   color: #fff;
   box-shadow: 0 0 15px rgba(255, 51, 102, 0.4);
+}
+
+.testModeBtn {
+  background: #2a2a36;
+  color: #a0a0b0;
+  border: 1px solid #3a3a46;
+  padding: 6px 16px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.testModeBtnActive {
+  background: #0088ff;
+  color: #fff;
+  border-color: #0088ff;
+  box-shadow: 0 0 15px rgba(0, 136, 255, 0.4);
+}
+
+.statsSummaryBar {
+  background: #12121a;
+  border-bottom: 1px solid #1a1a24;
+  padding: 8px 24px;
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.statsSummaryItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.statsSummaryLabel {
+  color: #555566;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.statsSummaryValue {
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.plus { color: #00ff66; }
+.minus { color: #ff3366; }
+
+.resetBtn {
+  background: transparent;
+  border: 1px solid #333;
+  color: #555;
+  padding: 2px 8px;
+  font-size: 0.6rem;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.resetBtn:hover {
+  border-color: #ff3366;
+  color: #ff3366;
 }
 
 .panelContent {
