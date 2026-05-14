@@ -18,6 +18,8 @@ export default function TerminalPage() {
   const [phantomWallet, setPhantomWallet] = useState<string | null>(null);
   const [exchanges, setExchanges] = useState<any[]>([]);
   const [selectedExchange, setSelectedExchange] = useState<string>('ALL');
+  const [isTradingEnabled, setIsTradingEnabled] = useState(false);
+  const [solPrice, setSolPrice] = useState<number>(0);
 
   const connectPhantom = async () => {
     try {
@@ -37,31 +39,52 @@ export default function TerminalPage() {
     let active = true;
     const poll = async () => {
       try {
-        const [fr, pr] = await Promise.all([
+        const [fr, pr, sr] = await Promise.all([
           fetch(`${API}/scanner/feed`),
-          fetch(`${API}/trades/open`) // Assuming this endpoint exists or we map to something similar
+          fetch(`${API}/trades/open`),
+          fetch(`${API}/monitor/sol-price`)
         ]);
         if (!fr.ok) throw new Error();
-        const f = await Promise.all([fr.json()]);
+        const f = await fr.json();
         const p = pr.ok ? await pr.json() : [];
-        if (active) { 
-          setFeed(f[0] || []); 
+        const s = sr.ok ? await sr.json() : { price: 0 };
+
+        if (active) {
+          setFeed(f || []);
           setPositions(p || []);
-          setConnected(true); 
-          if (!activeToken && f[0]?.length > 0) setActiveToken(f[0][0]);
+          setSolPrice(s.price);
+          setConnected(true);
+          if (!activeToken && f?.length > 0) setActiveToken(f[0]);
         }
       } catch { if (active) setConnected(false); }
     };
     poll();
     const iv = setInterval(poll, 2500);
 
-    fetch(`${API}/scanner/exchanges`).then(res => res.json()).then(setExchanges).catch(() => {});
+    fetch(`${API}/scanner/exchanges`).then(res => res.json()).then(setExchanges).catch(() => { });
+    fetch(`${API}/config`).then(res => res.json()).then(data => setIsTradingEnabled(data.is_trading_enabled)).catch(() => { });
 
     return () => { active = false; clearInterval(iv); };
   }, []);
 
-  const filteredFeed = selectedExchange === 'ALL' 
-    ? feed 
+  const toggleTrading = async () => {
+    try {
+      const res = await fetch(`${API}/config`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_trading_enabled: !isTradingEnabled })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIsTradingEnabled(data.is_trading_enabled);
+      }
+    } catch (err) {
+      console.error('Failed to toggle trading:', err);
+    }
+  };
+
+  const filteredFeed = selectedExchange === 'ALL'
+    ? feed
     : feed.filter(t => t.symbol?.startsWith(selectedExchange.slice(0, 4).toUpperCase()));
 
   return (
@@ -75,7 +98,7 @@ export default function TerminalPage() {
         <div className={styles.statsRow}>
           <div className={styles.stat}>
             <span className={styles.statLabel}>Giá Solana</span>
-            <span className={styles.statValue}>$154.20</span>
+            <span className={styles.statValue}>${solPrice > 0 ? solPrice.toFixed(2) : '---'}</span>
           </div>
           <div className={styles.stat}>
             <span className={styles.statLabel}>Độ trễ Mạng</span>
@@ -86,13 +109,21 @@ export default function TerminalPage() {
             {phantomWallet ? (
               <span className={styles.statValue}>{phantomWallet.slice(0, 4)}...{phantomWallet.slice(-4)}</span>
             ) : (
-              <button 
+              <button
                 onClick={connectPhantom}
                 style={{ background: '#AB9FF2', color: '#000', border: 'none', padding: '4px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
               >
                 Kết nối Phantom
               </button>
             )}
+          </div>
+          <div className={styles.stat}>
+            <button
+              onClick={toggleTrading}
+              className={`${styles.tradingBtn} ${isTradingEnabled ? styles.tradingBtnActive : ''}`}
+            >
+              {isTradingEnabled ? '⏹ DỪNG GIAO DỊCH' : '▶ BẬT GIAO DỊCH'}
+            </button>
           </div>
         </div>
       </header>
@@ -102,14 +133,14 @@ export default function TerminalPage() {
         <div className={styles.panelHeader} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
           <h2 className={styles.panelTitle}>⚡ Token Mới (Live)</h2>
           <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-            <button 
+            <button
               onClick={() => setSelectedExchange('ALL')}
               className={`${styles.filterBtn} ${selectedExchange === 'ALL' ? styles.filterBtnActive : ''}`}
             >
               TẤT CẢ
             </button>
             {exchanges.map(ex => (
-              <button 
+              <button
                 key={ex.id}
                 onClick={() => setSelectedExchange(ex.name)}
                 className={`${styles.filterBtn} ${selectedExchange === ex.name ? styles.filterBtnActive : ''}`}
@@ -122,11 +153,11 @@ export default function TerminalPage() {
         </div>
         <div className={styles.panelContent} style={{ padding: 0 }}>
           {filteredFeed.length === 0 ? (
-             <div style={{ padding: 20, color: '#555', textAlign: 'center' }}>Không có token nào...</div>
+            <div style={{ padding: 20, color: '#555', textAlign: 'center' }}>Không có token nào...</div>
           ) : filteredFeed.map((t, i) => (
-            <div 
-              key={i} 
-              className={`${styles.feedItem} ${t.status === 'fail' ? styles.feedItemFail : ''}`} 
+            <div
+              key={i}
+              className={`${styles.feedItem} ${t.status === 'fail' ? styles.feedItemFail : ''}`}
               onClick={() => setActiveToken(t)}
             >
               <div className={styles.feedItemMain} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -201,7 +232,7 @@ export default function TerminalPage() {
           <button className={`${styles.tradeTab} ${tradeMode === 'buy' ? styles.tradeTabBuy : ''}`} onClick={() => setTradeMode('buy')}>BUY</button>
           <button className={`${styles.tradeTab} ${tradeMode === 'sell' ? styles.tradeTabSell : ''}`} onClick={() => setTradeMode('sell')}>SELL</button>
         </div>
-        
+
         <div className={styles.consoleBody}>
           <div className={styles.inputGroup}>
             <span className={styles.inputLabel}>Khối lượng (USDT)</span>
@@ -264,7 +295,7 @@ export default function TerminalPage() {
                 <tr><td colSpan={6} style={{ textAlign: 'center', color: '#555' }}>Không có lệnh nào đang mở</td></tr>
               ) : positions.map((p, i) => (
                 <tr key={i}>
-                  <td>{p.token_mint?.slice(0,8)}...</td>
+                  <td>{p.token_mint?.slice(0, 8)}...</td>
                   <td>${parseFloat(p.entry_price || 0).toFixed(6)}</td>
                   <td>${parseFloat(p.highest_price_reached || p.entry_price || 0).toFixed(6)}</td>
                   <td>{p.amount_usd} USDT</td>

@@ -133,6 +133,28 @@
   color: #000;
 }
 
+.tradingBtn {
+  background: #ffcc00;
+  color: #000;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tradingBtn:hover {
+  filter: brightness(1.1);
+}
+
+.tradingBtnActive {
+  background: #ff3366;
+  color: #fff;
+  box-shadow: 0 0 15px rgba(255, 51, 102, 0.4);
+}
+
 .panelContent {
   flex: 1;
   overflow-y: auto;
