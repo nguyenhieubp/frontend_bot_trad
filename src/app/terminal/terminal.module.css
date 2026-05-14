@@ -258,6 +258,106 @@
   color: #ff3366;
 }
 
+/* Modal Styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(5px);
+}
+
+.modal {
+  background: #0d0d12;
+  border: 1px solid #2a2a36;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 0 30px rgba(0,0,0,0.5);
+}
+
+.modalHeader {
+  padding: 20px;
+  border-bottom: 1px solid #1a1a24;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modalTitle {
+  font-size: 1.1rem;
+  color: #00ff66;
+  margin: 0;
+}
+
+.closeBtn {
+  background: transparent;
+  border: none;
+  color: #555;
+  font-size: 2rem;
+  cursor: pointer;
+}
+
+.modalBody {
+  padding: 20px;
+}
+
+.ruleSection {
+  margin-bottom: 24px;
+}
+
+.ruleSectionTitle {
+  font-size: 0.8rem;
+  color: #555566;
+  margin-bottom: 12px;
+  border-left: 3px solid #0088ff;
+  padding-left: 10px;
+}
+
+.ruleItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  color: #a0a0b0;
+  font-size: 0.9rem;
+}
+
+.ruleItem input[type="number"] {
+  background: #1a1a24;
+  border: 1px solid #2a2a36;
+  color: #00ff66;
+  padding: 4px 8px;
+  border-radius: 4px;
+  width: 80px;
+  text-align: right;
+}
+
+.rulesBtn {
+  background: #1a1a24;
+  color: #fff;
+  border: 1px solid #2a2a36;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+}
+
+.rulesBtn:hover {
+  background: #2a2a36;
+  border-color: #00ff66;
+}
+
 .panelContent {
   flex: 1;
   overflow-y: auto;

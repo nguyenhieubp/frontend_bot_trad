@@ -22,6 +22,8 @@ export default function TerminalPage() {
   const [solPrice, setSolPrice] = useState<number>(0);
   const [isPaperTrading, setIsPaperTrading] = useState(true);
   const [stats, setStats] = useState({ virtualBalance: 1000, totalTrades: 0, winRate: 0, totalPnL: 0 });
+  const [isRulesOpen, setIsRulesOpen] = useState(false);
+  const [config, setConfig] = useState<any>({});
 
   const connectPhantom = async () => {
     try {
@@ -70,7 +72,10 @@ export default function TerminalPage() {
     const iv = setInterval(poll, 2500);
 
     fetch(`${API}/scanner/exchanges`).then(res => res.json()).then(setExchanges).catch(() => { });
-    fetch(`${API}/config`).then(res => res.json()).then(data => setIsTradingEnabled(data.is_trading_enabled)).catch(() => { });
+    fetch(`${API}/config`).then(res => res.json()).then(data => {
+      setIsTradingEnabled(data.is_trading_enabled);
+      setConfig(data);
+    }).catch(() => { });
 
     return () => { active = false; clearInterval(iv); };
   }, []);
@@ -107,6 +112,22 @@ export default function TerminalPage() {
     }
   };
 
+  const updateConfig = async (updates: any) => {
+    try {
+      const res = await fetch(`${API}/config`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setConfig(data);
+        setIsTradingEnabled(data.is_trading_enabled);
+        setIsPaperTrading(data.is_paper_trading);
+      }
+    } catch (err) { console.error('Update config failed:', err); }
+  };
+
   const resetSimulation = async () => {
     if (!confirm('Bạn có chắc muốn xóa hết dữ liệu đánh thử và reset số dư về $1000?')) return;
     try {
@@ -114,6 +135,22 @@ export default function TerminalPage() {
     } catch (err) {
       console.error('Failed to reset simulation:', err);
     }
+  };
+
+  const snipeToken = async (t: any) => {
+    try {
+      const res = await fetch(`${API}/trading/buy`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mintAddress: t.mintAddress,
+          pairAddress: t.pairAddress,
+          currentPriceUsd: t.priceUsd,
+          slippageBps: 1000
+        })
+      });
+      if (res.ok) alert(`Đã phát lệnh mua ${t.symbol}!`);
+    } catch (err) { alert('Lỗi khi mua nhanh'); }
   };
 
   const filteredFeed = selectedExchange === 'ALL'
@@ -166,7 +203,15 @@ export default function TerminalPage() {
               onClick={togglePaperTrading}
               className={`${styles.testModeBtn} ${isPaperTrading ? styles.testModeBtnActive : ''}`}
             >
-              {isPaperTrading ? '🧪 TEST MODE: ON' : '💵 LIVE MODE: ON'}
+              {isPaperTrading ? '🧪 TEST ON' : '💵 LIVE ON'}
+            </button>
+          </div>
+          <div className={styles.stat}>
+            <button
+              onClick={() => setIsRulesOpen(true)}
+              className={styles.rulesBtn}
+            >
+              🛡️ RULES
             </button>
           </div>
         </div>
@@ -198,26 +243,9 @@ export default function TerminalPage() {
 
       {/* Left Feed Panel */}
       <div className={`${styles.panel} ${styles.feed}`}>
-        <div className={styles.panelHeader} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
-          <h2 className={styles.panelTitle}>⚡ Token Mới (Live)</h2>
-          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => setSelectedExchange('ALL')}
-              className={`${styles.filterBtn} ${selectedExchange === 'ALL' ? styles.filterBtnActive : ''}`}
-            >
-              TẤT CẢ
-            </button>
-            {exchanges.map(ex => (
-              <button
-                key={ex.id}
-                onClick={() => setSelectedExchange(ex.name)}
-                className={`${styles.filterBtn} ${selectedExchange === ex.name ? styles.filterBtnActive : ''}`}
-                style={{ opacity: ex.is_active ? 1 : 0.5 }}
-              >
-                {ex.name.toUpperCase()}
-              </button>
-            ))}
-          </div>
+        <div className={styles.panelHeader} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          <h2 className={styles.panelTitle}>⚡ DexScreener Live</h2>
+          <span style={{ fontSize: '0.7rem', color: '#00ff66', background: 'rgba(0,255,102,0.1)', padding: '2px 8px', borderRadius: '10px' }}>POLLING ACTIVE</span>
         </div>
         <div className={styles.panelContent} style={{ padding: 0 }}>
           {filteredFeed.length === 0 ? (
@@ -248,7 +276,12 @@ export default function TerminalPage() {
               {t.status === 'fail' ? (
                 <div style={{ fontSize: '0.7rem', color: '#ff3366', marginTop: '4px' }}>Bỏ qua: {t.failReason}</div>
               ) : (
-                <button className={styles.feedSnipeBtn}>Mua Nhanh</button>
+                <button
+                  className={styles.feedSnipeBtn}
+                  onClick={(e) => { e.stopPropagation(); snipeToken(t); }}
+                >
+                  Mua Nhanh
+                </button>
               )}
             </div>
           ))}
@@ -388,6 +421,76 @@ export default function TerminalPage() {
           </table>
         </div>
       </div>
+      {/* Rules Modal */}
+      {isRulesOpen && (
+        <div className={styles.modalOverlay} onClick={() => setIsRulesOpen(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>🛡️ CẤU HÌNH BẢO MẬT 3 LỚP</h2>
+              <button className={styles.closeBtn} onClick={() => setIsRulesOpen(false)}>×</button>
+            </div>
+            <div className={styles.modalBody}>
+              <div className={styles.ruleSection}>
+                <h3 className={styles.ruleSectionTitle}>LỚP 1: BẢO MẬT ON-CHAIN</h3>
+                <div className={styles.ruleItem}>
+                  <label>LP Burned (100%)</label>
+                  <input type="checkbox" checked={config.rule_lp_burned} onChange={e => updateConfig({ rule_lp_burned: e.target.checked })} />
+                </div>
+                <div className={styles.ruleItem}>
+                  <label>Mint Authority (Renounced)</label>
+                  <input type="checkbox" checked={config.rule_mint_renounced} onChange={e => updateConfig({ rule_mint_renounced: e.target.checked })} />
+                </div>
+                <div className={styles.ruleItem}>
+                  <label>Freeze Authority (Renounced)</label>
+                  <input type="checkbox" checked={config.rule_freeze_disabled} onChange={e => updateConfig({ rule_freeze_disabled: e.target.checked })} />
+                </div>
+                <div className={styles.ruleItem}>
+                  <label>Top 10 Holders Max (%)</label>
+                  <input type="number" value={config.max_top_10_holders_pct} onChange={e => updateConfig({ max_top_10_holders_pct: e.target.value })} />
+                </div>
+              </div>
+
+              <div className={styles.ruleSection}>
+                <h3 className={styles.ruleSectionTitle}>LỚP 2: DATA LOGIC</h3>
+                <div className={styles.ruleItem}>
+                  <label>Tuổi Token (Min - Max phút)</label>
+                  <div style={{ display: 'flex', gap: '5px' }}>
+                    <input type="number" style={{ width: '60px' }} value={config.min_token_age_min} onChange={e => updateConfig({ min_token_age_min: e.target.value })} />
+                    <input type="number" style={{ width: '60px' }} value={config.max_token_age_min} onChange={e => updateConfig({ max_token_age_min: e.target.value })} />
+                  </div>
+                </div>
+                <div className={styles.ruleItem}>
+                  <label>Insider Wallet Max (%)</label>
+                  <input type="number" value={config.max_insider_bundle_pct} onChange={e => updateConfig({ max_insider_bundle_pct: e.target.value })} />
+                </div>
+                <div className={styles.ruleItem}>
+                  <label>Unique Buyers Min (%)</label>
+                  <input type="number" value={config.min_unique_buyers_ratio} onChange={e => updateConfig({ min_unique_buyers_ratio: e.target.value })} />
+                </div>
+              </div>
+
+              <div className={styles.ruleSection}>
+                <h3 className={styles.ruleSectionTitle}>LỚP 3: THANH KHOẢN</h3>
+                <div className={styles.ruleItem}>
+                  <label>Market Cap ($ Min - $ Max)</label>
+                  <div style={{ display: 'flex', gap: '5px' }}>
+                    <input type="number" style={{ width: '80px' }} value={config.min_mcap_usd} onChange={e => updateConfig({ min_mcap_usd: e.target.value })} />
+                    <input type="number" style={{ width: '80px' }} value={config.max_mcap_usd} onChange={e => updateConfig({ max_mcap_usd: e.target.value })} />
+                  </div>
+                </div>
+                <div className={styles.ruleItem}>
+                  <label>Liquidity / MCAP Min (%)</label>
+                  <input type="number" value={config.min_liquidity_mcap_ratio} onChange={e => updateConfig({ min_liquidity_mcap_ratio: e.target.value })} />
+                </div>
+                <div className={styles.ruleItem}>
+                  <label>Phải có Social Links</label>
+                  <input type="checkbox" checked={config.rule_social_links_required} onChange={e => updateConfig({ rule_social_links_required: e.target.checked })} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
