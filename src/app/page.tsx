@@ -147,7 +147,7 @@ export default function ConfigPage() {
             </div>
           </div>
           <div className={styles.fields} style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-            <Field label="RPC Polling (ms)" name="rpc_polling_interval_ms" value={config.rpc_polling_interval_ms} step="100" onChange={handleChange} />
+            <Field label="Monitor Polling (ms)" name="monitor_polling_interval_ms" value={config.monitor_polling_interval_ms} step="100" onChange={handleChange} />
             <Field label="Scanner Polling (ms)" name="scanner_polling_interval_ms" value={config.scanner_polling_interval_ms} step="100" onChange={handleChange} />
             <Field label="API Timeout (ms)" name="api_timeout_ms" value={config.api_timeout_ms} step="100" onChange={handleChange} />
             <div className={styles.field}>
