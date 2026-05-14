@@ -16,7 +16,23 @@ export default function WalletPage() {
   const [label, setLabel] = useState('');
   const [privateKey, setPrivateKey] = useState('');
   const [showKey, setShowKey] = useState(false);
+  const [phantomWallet, setPhantomWallet] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+
+  const connectPhantom = async () => {
+    try {
+      const provider = (window as any)?.solana;
+      if (provider?.isPhantom) {
+        const resp = await provider.connect();
+        setPhantomWallet(resp.publicKey.toString());
+        showToast('Đã kết nối Phantom Wallet!', true);
+      } else {
+        window.open('https://phantom.app/', '_blank');
+      }
+    } catch (err) {
+      showToast('Từ chối kết nối Phantom', false);
+    }
+  };
 
   useEffect(() => { load(); }, []);
 
@@ -24,7 +40,7 @@ export default function WalletPage() {
     try {
       const res = await fetch(`${API}/wallets`);
       setWallets(await res.json());
-    } catch { showToast('Failed to load wallets', false); }
+    } catch { showToast('Không thể tải danh sách ví', false); }
     finally { setLoading(false); }
   };
 
@@ -44,10 +60,10 @@ export default function WalletPage() {
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.message || 'Failed to add wallet');
+        throw new Error(err.message || 'Không thể thêm ví');
       }
       setLabel(''); setPrivateKey(''); setShowForm(false);
-      showToast('Wallet added successfully!', true);
+      showToast('Đã thêm ví thành công!', true);
       load();
     } catch (err: any) { showToast(err.message, false); }
     finally { setAdding(false); }
@@ -57,31 +73,39 @@ export default function WalletPage() {
     try {
       const res = await fetch(`${API}/wallets/${id}/activate`, { method: 'PATCH' });
       if (!res.ok) throw new Error();
-      showToast('Wallet activated!', true);
+      showToast('Đã kích hoạt ví!', true);
       load();
-    } catch { showToast('Failed to activate wallet', false); }
+    } catch { showToast('Không thể kích hoạt ví', false); }
   };
 
   const handleDelete = async (id: string, isActive: boolean) => {
-    if (isActive) return showToast('Cannot delete the active wallet', false);
-    if (!confirm('Delete this wallet?')) return;
+    if (isActive) return showToast('Không thể xóa ví đang kích hoạt', false);
+    if (!confirm('Bạn có chắc muốn xóa ví này?')) return;
     try {
       await fetch(`${API}/wallets/${id}`, { method: 'DELETE' });
-      showToast('Wallet deleted', true);
+      showToast('Đã xóa ví', true);
       load();
-    } catch { showToast('Failed to delete wallet', false); }
+    } catch { showToast('Không thể xóa ví', false); }
   };
 
   return (
     <div className={pageStyles.page}>
       <header className={pageStyles.pageHeader}>
         <div>
-          <h1 className={pageStyles.pageTitle}>Wallet Manager</h1>
-          <p className={pageStyles.pageDesc}>Manage trading wallets — private keys are encrypted (AES-256)</p>
+          <h1 className={pageStyles.pageTitle}>Quản lý Ví</h1>
+          <p className={pageStyles.pageDesc}>Quản lý các ví giao dịch — Private key được mã hóa AES-256 an toàn</p>
         </div>
-        <button className={pageStyles.saveBtn} onClick={() => setShowForm(!showForm)}>
-          {showForm ? '✕ Cancel' : '+ Add Wallet'}
-        </button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button 
+            onClick={connectPhantom}
+            style={{ background: '#AB9FF2', color: '#000', border: 'none', padding: '0 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}
+          >
+            {phantomWallet ? `${phantomWallet.slice(0, 4)}...${phantomWallet.slice(-4)}` : '👻 Kết nối Phantom'}
+          </button>
+          <button className={pageStyles.saveBtn} onClick={() => setShowForm(!showForm)}>
+            {showForm ? '✕ Hủy' : '+ Thêm Ví Base58'}
+          </button>
+        </div>
       </header>
 
       {/* Add Wallet Form */}
@@ -90,13 +114,13 @@ export default function WalletPage() {
           <div className={pageStyles.cardHeader}>
             <span className={pageStyles.cardIcon}>🔐</span>
             <div>
-              <h2 className={pageStyles.cardTitle}>Add New Wallet</h2>
-              <p className={pageStyles.cardDesc}>Private key is encrypted before storage</p>
+              <h2 className={pageStyles.cardTitle}>Thêm Ví Mới</h2>
+              <p className={pageStyles.cardDesc}>Private key sẽ được mã hóa trước khi lưu trữ</p>
             </div>
           </div>
           <form onSubmit={handleAdd} className={styles.formBody}>
             <div className={pageStyles.field}>
-              <label className={pageStyles.label}>Wallet Label</label>
+              <label className={pageStyles.label}>Tên gợi nhớ</label>
               <input type="text" value={label} onChange={e => setLabel(e.target.value)} required placeholder='e.g. "Main Wallet"' className={pageStyles.input} />
             </div>
             <div className={pageStyles.field}>
@@ -107,7 +131,7 @@ export default function WalletPage() {
                   value={privateKey}
                   onChange={e => setPrivateKey(e.target.value)}
                   required
-                  placeholder="Your Solana private key..."
+                  placeholder="Nhập Private key Solana của bạn..."
                   className={pageStyles.input}
                   style={{ paddingRight: '48px' }}
                 />
@@ -117,11 +141,11 @@ export default function WalletPage() {
               </div>
             </div>
             <div className={styles.securityNote}>
-              🔒 Key is encrypted with AES-256 and stored only in your local database.
+              🔒 Khóa của bạn được mã hóa AES-256 và chỉ lưu trên database cục bộ của bạn.
             </div>
             <button type="submit" className={`${pageStyles.saveBtn} ${styles.submitBtn}`} disabled={adding}>
               {adding ? <span className={pageStyles.spinner} /> : '💾'}
-              {adding ? 'Adding...' : 'Save Wallet'}
+              {adding ? 'Đang thêm...' : 'Lưu Ví'}
             </button>
           </form>
         </div>
@@ -130,13 +154,13 @@ export default function WalletPage() {
       {/* Wallets List */}
       {loading ? (
         <div className={pageStyles.loadingScreen} style={{ height: '200px' }}>
-          <div className={pageStyles.spinner} /> Loading wallets...
+          <div className={pageStyles.spinner} /> Đang tải danh sách ví...
         </div>
       ) : wallets.length === 0 ? (
         <div className={styles.emptyState}>
           <div className={styles.emptyIcon}>💼</div>
-          <p>No wallets added yet</p>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>Add a wallet to start trading</p>
+          <p>Chưa có ví nào</p>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>Thêm một ví để bắt đầu giao dịch</p>
         </div>
       ) : (
         <div className={styles.walletList}>
@@ -147,18 +171,18 @@ export default function WalletPage() {
                 <div>
                   <div className={styles.walletLabel}>
                     {w.label}
-                    {w.is_active && <span className={styles.activePill}>Active</span>}
+                    {w.is_active && <span className={styles.activePill}>Đang dùng</span>}
                   </div>
                   <div className={styles.walletPk}>
                     {w.public_key.slice(0, 12)}...{w.public_key.slice(-8)}
-                    <button className={styles.copyBtn} title="Copy address" onClick={() => { navigator.clipboard.writeText(w.public_key); showToast('Address copied!', true); }}>⎘</button>
+                    <button className={styles.copyBtn} title="Sao chép địa chỉ" onClick={() => { navigator.clipboard.writeText(w.public_key); showToast('Đã sao chép địa chỉ!', true); }}>⎘</button>
                   </div>
                 </div>
               </div>
               <div className={styles.walletActions}>
                 {!w.is_active && (
                   <button className={styles.activateBtn} onClick={() => handleActivate(w.id)}>
-                    ✓ Activate
+                    ✓ Chọn dùng
                   </button>
                 )}
                 <button className={styles.deleteBtn} onClick={() => handleDelete(w.id, w.is_active)}>

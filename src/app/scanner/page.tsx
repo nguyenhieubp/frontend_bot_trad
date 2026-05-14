@@ -16,7 +16,7 @@ interface PassedToken {
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const fmt = (n: number) => !n ? '$0' : n >= 1e6 ? `$${(n / 1e6).toFixed(1)}M` : n >= 1000 ? `$${(n / 1000).toFixed(1)}K` : `$${n.toFixed(0)}`;
-const ago = (d: string) => { const s = Math.floor((Date.now() - new Date(d).getTime()) / 1000); return s < 60 ? `${s}s ago` : `${Math.floor(s / 60)}m ago`; };
+const ago = (d: string) => { const s = Math.floor((Date.now() - new Date(d).getTime()) / 1000); return s < 60 ? `${s}s trước` : `${Math.floor(s / 60)} phút trước`; };
 
 export default function ScannerPage() {
   const [feed, setFeed] = useState<FeedItem[]>([]);
@@ -47,16 +47,16 @@ export default function ScannerPage() {
     <div className={pageStyles.page} style={{ maxWidth: '100%' }}>
       <header className={pageStyles.pageHeader}>
         <div>
-          <h1 className={pageStyles.pageTitle}>Scanner Feed</h1>
-          <p className={pageStyles.pageDesc}>Real-time token scanning &amp; filter results</p>
+          <h1 className={pageStyles.pageTitle}>Dữ liệu Máy quét</h1>
+          <p className={pageStyles.pageDesc}>Dữ liệu token theo thời gian thực &amp; kết quả bộ lọc</p>
         </div>
         <div className={styles.badges}>
           <span className={`${styles.badge} ${connected ? styles.live : styles.offline}`}>
             <span className={styles.dot} />
-            {connected ? 'Live' : 'Offline'}
+            {connected ? 'Trực tuyến' : 'Ngoại tuyến'}
           </span>
-          <span className={styles.badge}>✅ {passCount}</span>
-          <span className={styles.badge}>❌ {failCount}</span>
+          <span className={styles.badge}>✅ {passCount} Đạt</span>
+          <span className={styles.badge}>❌ {failCount} Loại</span>
         </div>
       </header>
 
@@ -64,18 +64,18 @@ export default function ScannerPage() {
         {/* Feed Panel */}
         <div className={pageStyles.card} style={{ flex: '1 1 480px', display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 180px)' }}>
           <div className={styles.panelHeader}>
-            <h2 className={styles.panelTitle}>⚡ Live Feed</h2>
+            <h2 className={styles.panelTitle}>⚡ Luồng trực tiếp</h2>
             <div className={styles.tabs}>
               {(['all', 'pass', 'fail'] as const).map(t => (
                 <button key={t} className={`${styles.tab} ${tab === t ? styles.tabActive : ''}`} onClick={() => setTab(t)}>
-                  {t === 'all' ? 'All' : t === 'pass' ? '✅ Pass' : '❌ Fail'}
+                  {t === 'all' ? 'Tất cả' : t === 'pass' ? '✅ Đạt' : '❌ Loại'}
                 </button>
               ))}
             </div>
           </div>
           <div className={styles.feedList}>
             {filtered.length === 0
-              ? <div className={styles.empty}>Waiting for scanner data...</div>
+              ? <div className={styles.empty}>Đang chờ dữ liệu quét...</div>
               : filtered.map((item, i) => (
                 <div key={i} className={`${styles.feedItem} ${item.status === 'pass' ? styles.feedPass : styles.feedFail}`}>
                   <div className={styles.feedMain}>
@@ -83,7 +83,7 @@ export default function ScannerPage() {
                     <div>
                       <span className={styles.feedSymbol}>{item.symbol}</span>
                       {item.failReason && <span className={styles.feedReason}>{item.failReason}</span>}
-                      {item.status === 'pass' && <span className={styles.feedReason} style={{ color: 'var(--success)' }}>All filters passed!</span>}
+                      {item.status === 'pass' && <span className={styles.feedReason} style={{ color: 'var(--success)' }}>Vượt qua bộ lọc!</span>}
                     </div>
                   </div>
                   <div className={styles.feedMeta}>
@@ -100,11 +100,11 @@ export default function ScannerPage() {
         {/* Passed Tokens */}
         <div className={pageStyles.card} style={{ flex: '0 0 340px', display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 180px)' }}>
           <div className={styles.panelHeader}>
-            <h2 className={styles.panelTitle}>🎯 Candidates ({passed.length})</h2>
+            <h2 className={styles.panelTitle}>🎯 Token Ứng viên ({passed.length})</h2>
           </div>
           <div className={styles.feedList}>
             {passed.length === 0
-              ? <div className={styles.empty}>No tokens yet.<br /><span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '8px', display: 'block' }}>Disable LP Burned filter to see results</span></div>
+              ? <div className={styles.empty}>Chưa có token nào.<br /><span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '8px', display: 'block' }}>Tắt bộ lọc LP Burned để xem kết quả</span></div>
               : passed.map(t => (
                 <div key={t.id} className={`${styles.feedItem} ${styles.feedPass}`}>
                   <div className={styles.feedMain}>

@@ -8,9 +8,10 @@ import styles from './Sidebar.module.css';
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 const nav = [
-  { href: '/', icon: '⚙️', label: 'Bot Config' },
-  { href: '/scanner', icon: '⚡', label: 'Scanner' },
-  { href: '/wallet', icon: '💼', label: 'Wallets' },
+  { href: '/terminal', icon: '💻', label: 'Terminal' },
+  { href: '/', icon: '⚙️', label: 'Cấu hình Bot' },
+  { href: '/scanner', icon: '⚡', label: 'Máy quét' },
+  { href: '/wallet', icon: '💼', label: 'Quản lý Ví' },
 ];
 
 export default function Sidebar() {
@@ -43,7 +44,7 @@ export default function Sidebar() {
         setStatus(data.status);
       }
     } catch (e) {
-      alert('Failed to toggle bot status');
+      alert('Không thể thay đổi trạng thái bot');
     } finally {
       setLoading(false);
     }
@@ -76,12 +77,12 @@ export default function Sidebar() {
           onClick={toggleBot}
           disabled={loading}
         >
-          {loading ? '...' : status === 'running' ? '⏹ Stop Bot' : '▶ Start Bot'}
+          {loading ? '...' : status === 'running' ? '⏹ Dừng Bot' : '▶ Khởi động Bot'}
         </button>
         <div className={styles.statusRow}>
           <div className={`${styles.status} ${status === 'running' ? styles.statusRunning : styles.statusStopped}`}>
             <span className={styles.statusDot} />
-            <span>{status === 'running' ? 'Running' : 'Stopped'}</span>
+            <span>{status === 'running' ? 'Đang chạy' : 'Đã dừng'}</span>
           </div>
           <span className={styles.version}>v0.1.0</span>
         </div>

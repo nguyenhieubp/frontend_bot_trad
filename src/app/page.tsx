@@ -5,7 +5,7 @@ import styles from './page.module.css';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
-const NUM = ['trade_amount_sol', 'take_profit_percent', 'stop_loss_percent', 'slippage_bps', 'min_mcap', 'max_mcap', 'min_liquidity', 'max_daily_trades', 'daily_stop_loss_usd'];
+const NUM = ['trade_amount_sol', 'take_profit_percent', 'stop_loss_percent', 'slippage_bps', 'min_mcap', 'max_mcap', 'min_liquidity', 'max_daily_trades', 'daily_stop_loss_usd', 'max_top10_percent', 'volume_surge_threshold', 'slippage_surge_multiplier', 'trail_profit_trigger_percent', 'trail_stop_loss_percent', 'trail_drop_from_ath_percent'];
 
 export default function ConfigPage() {
   const [config, setConfig] = useState<any>({});
@@ -20,7 +20,7 @@ export default function ConfigPage() {
       const res = await fetch(`${API}/config`);
       if (!res.ok) throw new Error();
       setConfig(await res.json());
-    } catch { showToast('Failed to load configuration', false); }
+    } catch { showToast('Không thể tải cấu hình', false); }
     finally { setLoading(false); }
   };
 
@@ -46,23 +46,23 @@ export default function ConfigPage() {
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error();
-      showToast('Configuration saved!', true);
-    } catch { showToast('Failed to save configuration', false); }
+      showToast('Đã lưu cấu hình!', true);
+    } catch { showToast('Không thể lưu cấu hình', false); }
     finally { setSaving(false); }
   };
 
-  if (loading) return <div className={styles.loadingScreen}><div className={styles.spinner} /><span>Loading config...</span></div>;
+  if (loading) return <div className={styles.loadingScreen}><div className={styles.spinner} /><span>Đang tải cấu hình...</span></div>;
 
   return (
     <div className={styles.page}>
       <header className={styles.pageHeader}>
         <div>
-          <h1 className={styles.pageTitle}>Bot Configuration</h1>
-          <p className={styles.pageDesc}>Adjust trading rules and risk parameters</p>
+          <h1 className={styles.pageTitle}>Cấu hình Bot</h1>
+          <p className={styles.pageDesc}>Điều chỉnh quy tắc giao dịch và thông số rủi ro</p>
         </div>
         <button form="config-form" type="submit" className={styles.saveBtn} disabled={saving}>
           {saving ? <span className={styles.spinner} /> : '💾'}
-          {saving ? 'Saving...' : 'Save Changes'}
+          {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
         </button>
       </header>
 
@@ -72,15 +72,15 @@ export default function ConfigPage() {
           <div className={styles.cardHeader}>
             <span className={styles.cardIcon}>📈</span>
             <div>
-              <h2 className={styles.cardTitle}>Trading Rules</h2>
-              <p className={styles.cardDesc}>Core trade execution parameters</p>
+              <h2 className={styles.cardTitle}>Quy tắc Giao dịch</h2>
+              <p className={styles.cardDesc}>Các thông số khớp lệnh cốt lõi</p>
             </div>
           </div>
           <div className={styles.fields}>
-            <Field label="Trade Amount (SOL)" name="trade_amount_sol" value={config.trade_amount_sol} step="0.0001" onChange={handleChange} required />
-            <Field label="Take Profit (%)" name="take_profit_percent" value={config.take_profit_percent} step="0.1" onChange={handleChange} required />
-            <Field label="Stop Loss (%)" name="stop_loss_percent" value={config.stop_loss_percent} step="0.1" onChange={handleChange} required />
-            <Field label="Slippage (BPS)" name="slippage_bps" value={config.slippage_bps} step="1" onChange={handleChange} required />
+            <Field label="Số lượng vào lệnh (USDT)" name="trade_amount_usd" value={config.trade_amount_usd} step="1" onChange={handleChange} required />
+            <Field label="Chốt lời (%)" name="take_profit_percent" value={config.take_profit_percent} step="0.1" onChange={handleChange} required />
+            <Field label="Cắt lỗ (%)" name="stop_loss_percent" value={config.stop_loss_percent} step="0.1" onChange={handleChange} required />
+            <Field label="Độ trượt giá (BPS)" name="slippage_bps" value={config.slippage_bps} step="1" onChange={handleChange} required />
           </div>
         </section>
 
@@ -89,17 +89,17 @@ export default function ConfigPage() {
           <div className={styles.cardHeader}>
             <span className={styles.cardIcon}>🔍</span>
             <div>
-              <h2 className={styles.cardTitle}>Market Filters</h2>
-              <p className={styles.cardDesc}>Token screening criteria</p>
+              <h2 className={styles.cardTitle}>Bộ lọc Thị trường</h2>
+              <p className={styles.cardDesc}>Tiêu chuẩn lựa chọn Token</p>
             </div>
           </div>
           <div className={styles.fields}>
-            <Field label="Min Market Cap ($)" name="min_mcap" value={config.min_mcap} step="1000" onChange={handleChange} />
-            <Field label="Max Market Cap ($)" name="max_mcap" value={config.max_mcap} step="1000" onChange={handleChange} />
-            <Field label="Min Liquidity ($)" name="min_liquidity" value={config.min_liquidity} step="100" onChange={handleChange} />
+            <Field label="Vốn hóa tối thiểu ($)" name="min_mcap" value={config.min_mcap} step="1000" onChange={handleChange} />
+            <Field label="Vốn hóa tối đa ($)" name="max_mcap" value={config.max_mcap} step="1000" onChange={handleChange} />
+            <Field label="Thanh khoản tối thiểu ($)" name="min_liquidity" value={config.min_liquidity} step="100" onChange={handleChange} />
             <div className={styles.toggleRow}>
-              <Toggle label="Require LP Burned" name="require_lp_burned" checked={!!config.require_lp_burned} onChange={handleChange} />
-              <Toggle label="Require Socials" name="require_socials" checked={!!config.require_socials} onChange={handleChange} />
+              <Toggle label="Bắt buộc khóa thanh khoản (LP Burned)" name="require_lp_burned" checked={!!config.require_lp_burned} onChange={handleChange} />
+              <Toggle label="Bắt buộc có mạng xã hội" name="require_socials" checked={!!config.require_socials} onChange={handleChange} />
             </div>
           </div>
         </section>
@@ -109,13 +109,58 @@ export default function ConfigPage() {
           <div className={styles.cardHeader}>
             <span className={styles.cardIcon}>🛡️</span>
             <div>
-              <h2 className={styles.cardTitle}>Risk Management</h2>
-              <p className={styles.cardDesc}>Daily limits and loss protection</p>
+              <h2 className={styles.cardTitle}>Quản lý Rủi ro</h2>
+              <p className={styles.cardDesc}>Giới hạn lệnh và bảo vệ vốn mỗi ngày</p>
             </div>
           </div>
           <div className={styles.fields}>
-            <Field label="Max Daily Trades" name="max_daily_trades" value={config.max_daily_trades} step="1" onChange={handleChange} required />
-            <Field label="Daily Stop Loss ($)" name="daily_stop_loss_usd" value={config.daily_stop_loss_usd} step="0.01" onChange={handleChange} required />
+            <Field label="Số lệnh tối đa/ngày" name="max_daily_trades" value={config.max_daily_trades} step="1" onChange={handleChange} required />
+            <Field label="Giới hạn Cắt lỗ/ngày ($)" name="daily_stop_loss_usd" value={config.daily_stop_loss_usd} step="0.01" onChange={handleChange} required />
+          </div>
+        </section>
+        {/* Dynamic & Security */}
+        <section className={styles.card} style={{ gridColumn: '1 / -1' }}>
+          <div className={styles.cardHeader}>
+            <span className={styles.cardIcon}>🛡️</span>
+            <div>
+              <h2 className={styles.cardTitle}>Bảo mật & Tối ưu Lợi nhuận</h2>
+              <p className={styles.cardDesc}>Cơ chế bảo vệ nâng cao và khóa lãi tự động (Trailing)</p>
+            </div>
+          </div>
+          <div className={styles.fields} style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+            <Field label="Top 10 ví giữ tối đa (%)" name="max_top10_percent" value={config.max_top10_percent} step="1" onChange={handleChange} />
+            <Field label="Volume đột biến ($)" name="volume_surge_threshold" value={config.volume_surge_threshold} step="1000" onChange={handleChange} />
+            <Field label="Hệ số Slippage khi đột biến" name="slippage_surge_multiplier" value={config.slippage_surge_multiplier} step="0.1" onChange={handleChange} />
+            <Field label="Lãi kích hoạt Trailing (%)" name="trail_profit_trigger_percent" value={config.trail_profit_trigger_percent} step="1" onChange={handleChange} />
+            <Field label="Khóa Cắt lỗ ở mức (%)" name="trail_stop_loss_percent" value={config.trail_stop_loss_percent} step="1" onChange={handleChange} />
+            <Field label="Bán khi sụt từ đỉnh (%)" name="trail_drop_from_ath_percent" value={config.trail_drop_from_ath_percent} step="1" onChange={handleChange} />
+          </div>
+        </section>
+
+        {/* System & Network */}
+        <section className={styles.card} style={{ gridColumn: '1 / -1' }}>
+          <div className={styles.cardHeader}>
+            <span className={styles.cardIcon}>⚙️</span>
+            <div>
+              <h2 className={styles.cardTitle}>Hệ thống & Tối ưu Mạng</h2>
+              <p className={styles.cardDesc}>Tinh chỉnh tốc độ quét, timeout và priority fee (Lamports)</p>
+            </div>
+          </div>
+          <div className={styles.fields} style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+            <Field label="RPC Polling (ms)" name="rpc_polling_interval_ms" value={config.rpc_polling_interval_ms} step="100" onChange={handleChange} />
+            <Field label="Scanner Polling (ms)" name="scanner_polling_interval_ms" value={config.scanner_polling_interval_ms} step="100" onChange={handleChange} />
+            <Field label="API Timeout (ms)" name="api_timeout_ms" value={config.api_timeout_ms} step="100" onChange={handleChange} />
+            <div className={styles.field}>
+              <label className={styles.label}>Priority Fee (Lamports)</label>
+              <input
+                type="text"
+                name="priority_fee"
+                value={config.priority_fee || ''}
+                placeholder='"auto" hoặc số (vd: 10000)'
+                onChange={handleChange}
+                className={styles.input}
+              />
+            </div>
           </div>
         </section>
       </form>
